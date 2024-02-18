@@ -1,0 +1,8 @@
+[package]
+name = "objectif"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+objectif-core = { path = "objectif-core" }
+objectif-derive = { path = "objectif-derive" }
