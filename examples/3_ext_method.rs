@@ -16,17 +16,15 @@ impl Default for MyObject {
     }
 }
 
-fn print(obj: *mut MyObject) {
-    unsafe {
-        println!("{}", (*obj).num);
-    }
+fn number(obj: *mut MyObject) -> i32 {
+    unsafe { (*obj).num }
 }
 
 fn main() {
     unsafe {
-        add_class_method![Object, "print", print];
-        let mut myobj = MyObject::default();
-        myobj.num = 5;
-        let _: () = call_method![myobj, print].unwrap();
+        add_class_method![MyObject, "number", number];
+        let myobj = MyObject::default();
+        let num: i32 = call_method![myobj, number].unwrap();
+        println!("Number is {num}");
     }
 }

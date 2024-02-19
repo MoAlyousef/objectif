@@ -32,10 +32,14 @@ pub fn inherits(attr: TokenStream, input: TokenStream) -> TokenStream {
         "{input}\n
         objectif::_define_class![{class_name}:{attr}];\n
         #[allow(non_upper_case_globals)]\n
-        static {class_name}_METHOD_TABLE: objectif::LazyVTable = objectif::LazyVTable::new(|| objectif::VTableInner::new(objectif::RCellMapType::new(objectif::OtherLazy::get(&{attr}::method_table()).expect(\"oops\").lock().clone().into_inner())));\n
+        static {class_name}_METHOD_TABLE: objectif::LazyVTable = objectif::LazyVTable::new(|| objectif::VTableInner::new(objectif::RCellMapType::new(objectif::Lazy::get(&{attr}::method_table()).expect(\"oops\").lock().clone().into_inner())));\n
         impl {class_name} {{
             pub fn method_table() -> &'static objectif::LazyVTable {{
-                objectif::OtherLazy::force(&{class_name}_METHOD_TABLE);
+                objectif::Lazy::force(&{class_name}_METHOD_TABLE);
+                &{class_name}_METHOD_TABLE
+            }}
+            pub fn method_table1(&self) -> &'static objectif::LazyVTable {{
+                objectif::Lazy::force(&{class_name}_METHOD_TABLE);
                 &{class_name}_METHOD_TABLE
             }}
         }}
@@ -48,5 +52,11 @@ pub fn inherits(attr: TokenStream, input: TokenStream) -> TokenStream {
 #[proc_macro]
 pub fn init_table(input: TokenStream) -> TokenStream {
     let fmt = format!("objectif::_init_table!({input})");
+    fmt.parse().unwrap()
+}
+
+#[proc_macro]
+pub fn super_call(input: TokenStream) -> TokenStream {
+    let fmt = format!("objectif::_super_call!({input})");
     fmt.parse().unwrap()
 }

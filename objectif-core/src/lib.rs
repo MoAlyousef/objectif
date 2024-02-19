@@ -1,4 +1,4 @@
-use once_cell::sync::Lazy;
+pub use once_cell::sync::Lazy;
 use parking_lot::ReentrantMutex;
 use std::cell::RefCell;
 use std::collections::BTreeMap;
@@ -13,8 +13,6 @@ pub type VTableInner = ReentrantMutex<RCellMapType>;
 pub type VTable = Arc<VTableInner>;
 
 pub type LazyVTable = Lazy<VTableInner>;
-
-pub use once_cell::sync::Lazy as OtherLazy;
 
 
 #[doc(hidden)]
@@ -103,10 +101,10 @@ macro_rules! _init_table {
             $obj::method_table().lock().borrow_mut().append(&mut map)
         }
     };
-    ($obj:ident, $($arg:literal : $name:ident,)+) => {
+    ($obj:ident, $($arg:literal : $name:ident,)*) => {
         {
             let mut map = $crate::MapType::default();
-            $(map.insert($arg, unsafe { std::mem::transmute($obj::$name as *const ()) });)+
+            $(map.insert($arg, unsafe { std::mem::transmute($obj::$name as *const ()) });)*
             $obj::method_table().lock().borrow_mut().append(&mut map)
         }
     };
@@ -120,6 +118,44 @@ macro_rules! _super_init {
             let o = $obj;
             o.vtable().lock().borrow_mut().append(&mut Self::method_table().lock().borrow_mut());
             o
+        }
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! _super_call {
+    ($obj:expr, $name:tt) => {
+        {
+            let val = $crate::Lazy::get(&$obj.method_table1()).unwrap();
+            let ret = match val.lock().borrow().get(stringify!($name)) {
+                Some(v) => {
+                    Some(
+                        (std::mem::transmute::<_, fn(*mut $crate::Object) -> _>(*v as fn(_)))(
+                            &$obj as *const _ as *mut $crate::Object,
+                        )
+                    )
+                },
+                None => None,
+            };
+            ret
+        }
+    };
+    ($obj:expr, $($name:ident : $arg:expr)+) => {
+        {
+            let name = concat!($(stringify!($name), ':'),+);
+            let val = $crate::Lazy::get($obj.method_table1()).unwrap();
+            let ret = match val.lock().borrow().get(name) {
+                Some(v) => {
+                    Some(
+                        (std::mem::transmute::<_, fn(*mut $crate::Object, $($crate::_expr_as_underscore!($arg)),+) -> _>(*v as fn(_)))(
+                            &$obj as *const _ as *mut $crate::Object, $($arg,)+
+                        )
+                    )
+                },
+                None => None,
+            };
+            ret
         }
     };
 }
@@ -154,6 +190,11 @@ impl Object {
     }
 
     pub fn method_table() -> &'static LazyVTable {
+        Lazy::force(&Object_METHOD_TABLE);
+        &Object_METHOD_TABLE
+    }
+
+    pub fn method_table1(&self) -> &'static LazyVTable {
         Lazy::force(&Object_METHOD_TABLE);
         &Object_METHOD_TABLE
     }
