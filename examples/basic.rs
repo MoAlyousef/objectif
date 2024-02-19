@@ -1,9 +1,17 @@
-use objectif::{call_method, inherits, Object};
+use objectif::{call_method, inherits, init_table, super_init, Object};
 
-#[derive(Default)]
 #[inherits(Object)]
 struct MyObject {
     parent: Object,
+}
+
+impl Default for MyObject {
+    fn default() -> Self {
+        init_table!(MyObject);
+        Self {
+            parent: super_init![Object::default()],
+        }
+    }
 }
 
 fn main() {

@@ -14,16 +14,21 @@ pub type VTable = Arc<VTableInner>;
 
 pub type LazyVTable = Lazy<VTableInner>;
 
+pub use once_cell::sync::Lazy as OtherLazy;
+
+
+#[doc(hidden)]
 #[macro_export]
-macro_rules! expr_as_underscore {
+macro_rules! _expr_as_underscore {
     ($e:expr) => {
         _
     };
 }
 
+#[doc(hidden)]
 #[macro_export]
-macro_rules! call_method {
-    ($obj:expr,$name:tt) => {
+macro_rules! _call_method {
+    ($obj:expr, $name:tt) => {
         {
             let val = $obj.vtable();
             let ret = match val.lock().borrow().get(stringify!($name)) {
@@ -46,7 +51,7 @@ macro_rules! call_method {
             let ret = match val.lock().borrow().get(name) {
                 Some(v) => {
                     Some(
-                        (std::mem::transmute::<_, fn(*mut $crate::Object, $($crate::expr_as_underscore!($arg)),+) -> _>(*v as fn(_)))(
+                        (std::mem::transmute::<_, fn(*mut $crate::Object, $($crate::_expr_as_underscore!($arg)),+) -> _>(*v as fn(_)))(
                             &$obj as *const _ as *mut $crate::Object, $($arg,)+
                         )
                     )
@@ -58,8 +63,9 @@ macro_rules! call_method {
     };
 }
 
+#[doc(hidden)]
 #[macro_export]
-macro_rules! add_class_method {
+macro_rules! _add_class_method {
     ($i:ident, $sel:literal, $f:expr) => {
         $i::method_table()
             .lock()
@@ -68,8 +74,9 @@ macro_rules! add_class_method {
     };
 }
 
+#[doc(hidden)]
 #[macro_export]
-macro_rules! define_class {
+macro_rules! _define_class {
     ($name:ident:$parent:ident) => {
         impl std::ops::Deref for $name {
             type Target = $parent;
@@ -87,13 +94,43 @@ macro_rules! define_class {
     };
 }
 
+#[doc(hidden)]
+#[macro_export]
+macro_rules! _init_table {
+    ($obj:ident) => {
+        {
+            let mut map = $crate::MapType::default();
+            $obj::method_table().lock().borrow_mut().append(&mut map)
+        }
+    };
+    ($obj:ident, $($arg:literal : $name:ident,)+) => {
+        {
+            let mut map = $crate::MapType::default();
+            $(map.insert($arg, unsafe { std::mem::transmute($obj::$name as *const ()) });)+
+            $obj::method_table().lock().borrow_mut().append(&mut map)
+        }
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! _super_init {
+    ($obj:expr) => {
+        {
+            let o = $obj;
+            o.vtable().lock().borrow_mut().append(&mut Self::method_table().lock().borrow_mut());
+            o
+        }
+    };
+}
+
 #[derive(Debug, Clone)]
 pub struct Object {
     vtable: crate::VTable,
 }
 
 #[allow(non_upper_case_globals)]
-static Object_METHOD_TABLE: LazyVTable = LazyVTable::new(|| unsafe {
+pub static Object_METHOD_TABLE: LazyVTable = LazyVTable::new(|| unsafe {
     let mut map = BTreeMap::new();
     map.insert("is_object", std::mem::transmute(Object::is_object as *const ()));
     map.insert("has_method:", std::mem::transmute(Object::has_method as *const ()));
@@ -117,6 +154,7 @@ impl Object {
     }
 
     pub fn method_table() -> &'static LazyVTable {
+        Lazy::force(&Object_METHOD_TABLE);
         &Object_METHOD_TABLE
     }
 
@@ -158,11 +196,15 @@ impl Object {
         }
     }
 
-    fn has_method(&self, nm: &str) -> bool {
+    pub fn has_method(&self, nm: &str) -> bool {
         self.vtable().lock().borrow().contains_key(nm)
     }
 
-    fn is_object(&self) -> bool {
+    pub fn is_object(&self) -> bool {
         true
+    }
+
+    pub fn print_methods(&self) {
+        println!("{:?}", *self.vtable().lock().borrow())
     }
 }

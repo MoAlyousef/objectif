@@ -1,10 +1,19 @@
-use objectif::{add_class_method, call_method, inherits, Object};
+use objectif::{add_class_method, call_method, inherits, init_table, super_init, Object};
 
-#[derive(Default)]
 #[inherits(Object)]
 struct MyObject {
     parent: Object,
     num: i32,
+}
+
+impl Default for MyObject {
+    fn default() -> Self {
+        init_table!(MyObject);
+        Self {
+            parent: super_init![Object::default()],
+            num: 5,
+        }
+    }
 }
 
 fn print(obj: *mut MyObject) {

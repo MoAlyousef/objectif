@@ -4,21 +4,21 @@ use proc_macro::TokenStream;
 
 #[proc_macro]
 pub fn call_method(input: TokenStream) -> TokenStream {
-    format!("objectif_core::call_method![{}]", input)
+    format!("objectif::_call_method![{input}]")
         .parse()
         .unwrap()
 }
 
 #[proc_macro]
 pub fn add_class_method(input: TokenStream) -> TokenStream {
-    format!("objectif_core::add_class_method![{}]", input)
+    format!("objectif::_add_class_method![{input}]")
         .parse()
         .unwrap()
 }
 
 #[proc_macro]
-pub fn define_class(input: TokenStream) -> TokenStream {
-    format!("objectif_core::define_class![{}]", input)
+pub fn super_init(input: TokenStream) -> TokenStream {
+    format!("objectif::_super_init![{}]", input)
         .parse()
         .unwrap()
 }
@@ -28,18 +28,25 @@ pub fn inherits(attr: TokenStream, input: TokenStream) -> TokenStream {
     let input1 = input.to_string();
     let input1: Vec<_> = input1.split(' ').collect();
     let class_name = input1[1];
-    format!(
+    let fmt = format!(
         "{input}\n
-        objectif_core::define_class![{class_name}:{attr}];\n
+        objectif::_define_class![{class_name}:{attr}];\n
         #[allow(non_upper_case_globals)]\n
-        static {class_name}_METHOD_TABLE: objectif_core::LazyVTable = objectif_core::LazyVTable::new(|| objectif_core::VTableInner::new(objectif_core::RCellMapType::new(objectif_core::MapType::default())));\n
+        static {class_name}_METHOD_TABLE: objectif::LazyVTable = objectif::LazyVTable::new(|| objectif::VTableInner::new(objectif::RCellMapType::new(objectif::OtherLazy::get(&{attr}::method_table()).expect(\"oops\").lock().clone().into_inner())));\n
         impl {class_name} {{
-            pub fn method_table() -> &'static objectif_core::LazyVTable {{
+            pub fn method_table() -> &'static objectif::LazyVTable {{
+                objectif::OtherLazy::force(&{class_name}_METHOD_TABLE);
                 &{class_name}_METHOD_TABLE
             }}
         }}
         "
-    )
-    .parse()
+    );
+    fmt.parse()
     .unwrap()
+}
+
+#[proc_macro]
+pub fn init_table(input: TokenStream) -> TokenStream {
+    let fmt = format!("objectif::_init_table!({input})");
+    fmt.parse().unwrap()
 }
