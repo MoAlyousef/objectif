@@ -89,12 +89,19 @@ struct MedStudentObj {
 impl Default for MedStudentObj {
     fn default() -> Self {
         init_table!(
-            MedStudentObj
+            MedStudentObj,
+            "age":age,
         );
         Self {
             parent: super_init![StudentObj::default()],
             age: 23,
         }
+    }
+}
+
+impl MedStudentObj {
+    pub fn age(&self) -> u32 {
+        self.age
     }
 }
 
