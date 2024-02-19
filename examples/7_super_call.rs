@@ -1,4 +1,4 @@
-use objectif::{call_method, inherits, init_table, super_init, super_call, Object};
+use objectif::{call_method, inherits, init_table, super_init, Object};
 
 #[inherits(Object)]
 struct Shape {
@@ -7,7 +7,7 @@ struct Shape {
 
 impl Shape {
     pub fn draw(&self) {
-        // do drawing!
+        // do drawing
     }
 }
 
@@ -43,7 +43,7 @@ impl Rect {
         }
     }
     pub fn draw(&self) {
-        let _: () = unsafe { super_call![self.parent, draw].unwrap() };
+        self.parent.draw()
     }
 }
 
@@ -65,12 +65,11 @@ impl Circle {
         }
     }
     pub fn draw(&self) {
-        let _: () = unsafe { super_call![self.parent, draw].unwrap() };
+        self.parent.draw()
     }
 }
 
 fn main() {
-    let s = Shape::default();
     let myrect = Rect::new(4., 5.);
     let _: () = unsafe { call_method![myrect, draw].unwrap() };
 
