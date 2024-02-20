@@ -22,10 +22,10 @@ pub struct MedStudent {
     parent: Student,
 }
 
-impl Default for MedStudent {
-    fn default() -> Self {
+impl MedStudent {
+    fn new(age: u32) -> Self {
         Self {
-            parent: Student::new(23),
+            parent: Student::new(age),
         }
     }
 }
@@ -80,23 +80,27 @@ struct MedStudentObj {
     parent: StudentObj,
 }
 
-impl Default for MedStudentObj {
-    fn default() -> Self {
+impl MedStudentObj {
+    fn new(age: u32) -> Self {
         init_table!(
             MedStudentObj,
         );
         Self {
-            parent: super_init![StudentObj::new(23)],
+            parent: super_init![StudentObj::new(age)],
         }
     }
 }
 
 fn benchmark(count: u32) {
+    dbg!(std::mem::size_of::<MedStudentObj>());
+    dbg!(std::mem::size_of::<Box<MedStudentObj>>());
+    dbg!(std::mem::size_of::<MedStudent>());
+    dbg!(std::mem::size_of::<Box<dyn HasAge>>());
     let mut sum: u32 = 0;
     let mut v: Vec<Box<StudentObj>> = vec![];
     for i in 0..count {
         if i % 2 == 0 {
-            let medstudentobj = MedStudentObj::default();
+            let medstudentobj = MedStudentObj::new(24);
             v.push(unsafe { std::mem::transmute(Box::new(medstudentobj)) });
         } else {
             let studentobj = StudentObj::new(20);
@@ -118,7 +122,7 @@ fn benchmark(count: u32) {
     let mut v: Vec<Box<dyn HasAge>> = vec![];
     for i in 0..count {
         if i % 2 == 0 {
-            let medstudent = MedStudent::default();
+            let medstudent = MedStudent::new(24);
             v.push(Box::new(medstudent));
         } else {
             let student = Student::new(20);
@@ -141,5 +145,5 @@ fn benchmark(count: u32) {
 
 fn main() {
     let args: Vec<_> = std::env::args().collect();
-    std::hint::black_box(benchmark(args[1].parse().unwrap()));
+    std::hint::black_box(benchmark(args[1].parse().unwrap_or(100000)));
 }
