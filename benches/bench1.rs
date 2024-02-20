@@ -4,10 +4,10 @@ pub struct Student {
     pub age: u32,
 }
 
-impl Default for Student {
-    fn default() -> Self {
+impl Student {
+    fn new(age: u32) -> Self {
         Self {
-            age: 20,
+            age,
         }
     }
 }
@@ -20,14 +20,12 @@ impl HasAge for Student {
 
 pub struct MedStudent {
     parent: Student,
-    age: u32,
 }
 
 impl Default for MedStudent {
     fn default() -> Self {
         Self {
-            parent: Student::default(),
-            age: 23,
+            parent: Student::new(23),
         }
     }
 }
@@ -61,20 +59,17 @@ struct StudentObj {
     age: u32,
 }
 
-impl Default for StudentObj {
-    fn default() -> Self {
+impl StudentObj {
+    pub fn new(age: u32) -> Self {
         init_table!(
             StudentObj,
             "age": age,
         );
         Self {
             parent: super_init![Object::default()],
-            age: 20,
+            age,
         }
     }
-}
-
-impl StudentObj {
     pub fn age(&self) -> u32 {
         self.age
     }
@@ -83,34 +78,30 @@ impl StudentObj {
 #[inherits(StudentObj)]
 struct MedStudentObj {
     parent: StudentObj,
-    age: u32,
 }
 
 impl Default for MedStudentObj {
     fn default() -> Self {
         init_table!(
             MedStudentObj,
-            "age":age,
         );
         Self {
-            parent: super_init![StudentObj::default()],
-            age: 23,
+            parent: super_init![StudentObj::new(23)],
         }
-    }
-}
-
-impl MedStudentObj {
-    pub fn age(&self) -> u32 {
-        self.age
     }
 }
 
 fn benchmark(count: u32) {
     let mut sum: u32 = 0;
     let mut v: Vec<Box<StudentObj>> = vec![];
-    for _i in 0..count {
-        let medstudentobj = MedStudentObj::default();
-        v.push(unsafe { std::mem::transmute(Box::new(medstudentobj)) });
+    for i in 0..count {
+        if i % 2 == 0 {
+            let medstudentobj = MedStudentObj::default();
+            v.push(unsafe { std::mem::transmute(Box::new(medstudentobj)) });
+        } else {
+            let studentobj = StudentObj::new(20);
+            v.push(Box::new(studentobj));
+        }
     }
     let start = std::time::Instant::now();
     for elem in v {
@@ -125,9 +116,14 @@ fn benchmark(count: u32) {
     );
 
     let mut v: Vec<Box<dyn HasAge>> = vec![];
-    for _i in 0..count {
-        let medstudent = MedStudent::default();
-        v.push(Box::new(medstudent));
+    for i in 0..count {
+        if i % 2 == 0 {
+            let medstudent = MedStudent::default();
+            v.push(Box::new(medstudent));
+        } else {
+            let student = Student::new(20);
+            v.push(Box::new(student));
+        }
     }
     sum = 0;
     let start = std::time::Instant::now();

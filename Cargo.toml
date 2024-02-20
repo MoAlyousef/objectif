@@ -6,3 +6,7 @@ edition = "2021"
 [dependencies]
 objectif-core = { path = "objectif-core" }
 objectif-derive = { path = "objectif-derive" }
+
+[[bench]]
+name = "bench1"
+harness = false
