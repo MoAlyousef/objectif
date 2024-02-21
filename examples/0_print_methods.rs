@@ -1,4 +1,4 @@
-use objectif::{inherits, table_init, super_init, Object};
+use objectif::{inherits, super_init, table_init, Object};
 
 #[inherits(Object)]
 struct MyObject {

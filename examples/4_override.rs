@@ -1,4 +1,4 @@
-use objectif::{call_method, inherits, table_init, super_init, Object};
+use objectif::{call_method, inherits, super_init, table_init, Object};
 
 #[inherits(Object)]
 struct Shape {
@@ -39,7 +39,7 @@ impl Rect {
         Self {
             parent: super_init![Shape::default()],
             x,
-            y
+            y,
         }
     }
     pub fn area(&self) -> f64 {
@@ -77,7 +77,7 @@ impl Circle {
         }
         Self {
             parent: super_init![Shape::default()],
-            r
+            r,
         }
     }
     pub fn area(&self) -> f64 {

@@ -1,4 +1,4 @@
-use objectif::{add_class_method, call_method, inherits, table_init, super_init, Object};
+use objectif::{add_class_method, call_method, inherits, super_init, table_init, Object};
 
 #[inherits(Object)]
 struct MyObject {

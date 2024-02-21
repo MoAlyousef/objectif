@@ -1,4 +1,4 @@
-use objectif::{call_method, inherits, table_init, super_init, Object};
+use objectif::{call_method, inherits, super_init, table_init, Object};
 
 pub struct Student {
     pub age: u32,
@@ -6,9 +6,7 @@ pub struct Student {
 
 impl Student {
     fn new(age: u32) -> Self {
-        Self {
-            age,
-        }
+        Self { age }
     }
 }
 
@@ -82,9 +80,7 @@ struct MedStudentObj {
 
 impl MedStudentObj {
     fn new(age: u32) -> Self {
-        table_init!(
-            MedStudentObj,
-        );
+        table_init!(MedStudentObj,);
         Self {
             parent: super_init![StudentObj::new(age)],
         }
@@ -113,7 +109,7 @@ fn benchmark(count: u32) {
         sum += val;
     }
     let duration = start.elapsed();
-    let average = sum/count;
+    let average = sum / count;
     println!(
         "value {average}: dyndispatch Object {} nanos per call",
         duration.as_nanos() / count as u128
@@ -136,7 +132,7 @@ fn benchmark(count: u32) {
         sum += val;
     }
     let duration = start.elapsed();
-    let average = sum/count;
+    let average = sum / count;
     println!(
         "value {average}: dyndispatch Trait {} nanos per call",
         duration.as_nanos() / count as u128

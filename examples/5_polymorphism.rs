@@ -1,4 +1,4 @@
-use objectif::{call_method, inherits, table_init, super_init, Object};
+use objectif::{call_method, inherits, super_init, table_init, Object};
 use std::mem::transmute;
 
 #[inherits(Object)]
