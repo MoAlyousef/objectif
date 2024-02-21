@@ -1,5 +1,6 @@
 use objectif::{call_method, inherits, super_init, table_init, Object};
 
+#[derive(Clone)]
 #[inherits(Object)]
 struct MyObject {
     parent: Object,
