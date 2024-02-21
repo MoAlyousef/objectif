@@ -50,8 +50,8 @@ pub fn inherits(attr: TokenStream, input: TokenStream) -> TokenStream {
 }
 
 #[proc_macro]
-pub fn init_table(input: TokenStream) -> TokenStream {
-    let fmt = format!("objectif::_init_table!({input})");
+pub fn table_init(input: TokenStream) -> TokenStream {
+    let fmt = format!("objectif::_table_init!({input})");
     fmt.parse().unwrap()
 }
 

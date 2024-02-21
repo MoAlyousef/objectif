@@ -1,4 +1,4 @@
-use objectif::{add_class_method, call_method, inherits, init_table, super_init, Object};
+use objectif::{add_class_method, call_method, inherits, table_init, super_init, Object};
 
 #[inherits(Object)]
 struct MyObject {
@@ -8,7 +8,7 @@ struct MyObject {
 
 impl Default for MyObject {
     fn default() -> Self {
-        init_table!(MyObject);
+        table_init!(MyObject);
         Self {
             parent: super_init![Object::default()],
             num: 5,

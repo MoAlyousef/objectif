@@ -1,4 +1,4 @@
-use objectif::{call_method, inherits, init_table, super_init, Object};
+use objectif::{call_method, inherits, table_init, super_call, super_init, Object};
 
 #[inherits(Object)]
 struct Shape {
@@ -13,7 +13,7 @@ impl Shape {
 
 impl Default for Shape {
     fn default() -> Self {
-        init_table! {
+        table_init! {
             Shape,
             "draw": draw,
         };
@@ -32,10 +32,10 @@ struct Rect {
 
 impl Rect {
     fn new(x: f64, y: f64) -> Self {
-        init_table! {
+        table_init! {
             Rect,
             "draw": draw,
-        }
+        };
         Self {
             parent: super_init![Shape::default()],
             x,
@@ -43,6 +43,7 @@ impl Rect {
         }
     }
     pub fn draw(&self) {
+        // can perform a static call
         self.parent.draw()
     }
 }
@@ -55,17 +56,18 @@ struct Circle {
 
 impl Circle {
     fn new(r: f64) -> Self {
-        init_table! {
+        table_init! {
             Circle,
             "draw": draw,
-        }
+        };
         Self {
             parent: super_init![Shape::default()],
             r
         }
     }
     pub fn draw(&self) {
-        self.parent.draw()
+        // or a dynamic call
+        let _: () = unsafe { super_call![self.parent, draw].unwrap() };
     }
 }
 

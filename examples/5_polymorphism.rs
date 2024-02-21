@@ -1,4 +1,4 @@
-use objectif::{call_method, inherits, init_table, super_init, Object};
+use objectif::{call_method, inherits, table_init, super_init, Object};
 use std::mem::transmute;
 
 #[inherits(Object)]
@@ -14,7 +14,7 @@ impl Shape {
 
 impl Default for Shape {
     fn default() -> Self {
-        init_table! {
+        table_init! {
             Shape,
             "area": area,
         };
@@ -39,7 +39,7 @@ impl Rect {
 
 impl Rect {
     fn new(x: f64, y: f64) -> Self {
-        init_table! {
+        table_init! {
             Rect,
             "area": area,
         }
@@ -58,7 +58,7 @@ struct Square {
 
 impl Square {
     fn new(x: f64) -> Self {
-        init_table! {
+        table_init! {
             Square,
         }
         Self {
@@ -81,7 +81,7 @@ impl Circle {
 
 impl Circle {
     fn new(r: f64) -> Self {
-        init_table! {
+        table_init! {
             Circle,
             "area": area,
         }

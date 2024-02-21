@@ -1,4 +1,4 @@
-use objectif::{call_method, inherits, init_table, super_init, Object};
+use objectif::{call_method, inherits, table_init, super_init, Object};
 
 pub struct Student {
     pub age: u32,
@@ -61,7 +61,7 @@ struct StudentObj {
 
 impl StudentObj {
     pub fn new(age: u32) -> Self {
-        init_table!(
+        table_init!(
             StudentObj,
             "age": age,
         );
@@ -82,7 +82,7 @@ struct MedStudentObj {
 
 impl MedStudentObj {
     fn new(age: u32) -> Self {
-        init_table!(
+        table_init!(
             MedStudentObj,
         );
         Self {

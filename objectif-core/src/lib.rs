@@ -94,18 +94,18 @@ macro_rules! _define_class {
 
 #[doc(hidden)]
 #[macro_export]
-macro_rules! _init_table {
+macro_rules! _table_init {
     ($obj:ident) => {
         {
             let mut map = $crate::MapType::default();
-            $obj::method_table().lock().borrow_mut().append(&mut map)
+            $obj::method_table().lock().borrow_mut().extend(map)
         }
     };
     ($obj:ident, $($arg:literal : $name:ident,)*) => {
         {
             let mut map = $crate::MapType::default();
             $(map.insert($arg, unsafe { std::mem::transmute($obj::$name as *const ()) });)*
-            $obj::method_table().lock().borrow_mut().append(&mut map)
+            $obj::method_table().lock().borrow_mut().extend(map)
         }
     };
 }
@@ -116,7 +116,7 @@ macro_rules! _super_init {
     ($obj:expr) => {
         {
             let o = $obj;
-            o.vtable().lock().borrow_mut().append(&mut Self::method_table().lock().borrow_mut());
+            o.vtable().lock().borrow_mut().extend(Self::method_table().lock().borrow_mut().clone());
             o
         }
     };

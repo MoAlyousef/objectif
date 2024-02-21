@@ -1,4 +1,4 @@
-use objectif::{call_method, inherits, init_table, super_init, Object};
+use objectif::{call_method, inherits, table_init, super_init, Object};
 
 #[inherits(Object)]
 struct Shape {
@@ -13,7 +13,7 @@ impl Shape {
 
 impl Default for Shape {
     fn default() -> Self {
-        init_table! {
+        table_init! {
             Shape,
             "area": area,
         };
@@ -32,7 +32,7 @@ struct Rect {
 
 impl Rect {
     fn new(x: f64, y: f64) -> Self {
-        init_table! {
+        table_init! {
             Rect,
             "area": area,
         }
@@ -54,7 +54,7 @@ struct Square {
 
 impl Square {
     fn new(x: f64) -> Self {
-        init_table! {
+        table_init! {
             Square,
         }
         Self {
@@ -71,7 +71,7 @@ struct Circle {
 
 impl Circle {
     fn new(r: f64) -> Self {
-        init_table! {
+        table_init! {
             Circle,
             "area": area,
         }
