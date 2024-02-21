@@ -7,7 +7,7 @@ struct Shape {
 
 impl Shape {
     pub fn draw(&self) {
-        // do drawing
+        println!("Draw shape");
     }
 }
 
@@ -44,7 +44,8 @@ impl Rect {
     }
     pub fn draw(&self) {
         // can perform a static call
-        self.parent.draw()
+        self.parent.draw();
+        println!("Draw Rect");
     }
 }
 
@@ -68,6 +69,7 @@ impl Circle {
     pub fn draw(&self) {
         // or a dynamic call
         let _: () = unsafe { super_call![self.parent, draw].unwrap() };
+        println!("Draw circle");
     }
 }
 
