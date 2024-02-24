@@ -1,8 +1,10 @@
-pub use once_cell::sync::Lazy;
+use once_cell::sync::Lazy;
 use parking_lot::ReentrantMutex;
 use std::cell::RefCell;
 use std::collections::BTreeMap;
 use std::sync::Arc;
+
+pub type OLazy<T, F = fn() -> T> = Lazy<T, F>;
 
 pub type MapType = BTreeMap<&'static str, fn(*mut Object)>;
 
@@ -132,7 +134,7 @@ macro_rules! _super_init {
 macro_rules! _super_call {
     ($obj:expr, $name:tt) => {
         {
-            let val = $crate::Lazy::get(&$obj.method_table1()).unwrap();
+            let val = $crate::OLazy::get(&$obj.method_table1()).unwrap();
             let ret = match val.lock().borrow().get(stringify!($name)) {
                 Some(v) => {
                     Some(
@@ -149,7 +151,7 @@ macro_rules! _super_call {
     ($obj:expr, $($name:ident : $arg:expr)+) => {
         {
             let name = concat!($(stringify!($name), ':'),+);
-            let val = $crate::Lazy::get($obj.method_table1()).unwrap();
+            let val = $crate::OLazy::get($obj.method_table1()).unwrap();
             let ret = match val.lock().borrow().get(name) {
                 Some(v) => {
                     Some(
