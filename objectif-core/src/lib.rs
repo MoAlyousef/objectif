@@ -290,4 +290,8 @@ impl Object {
     pub fn print_methods(&self) {
         println!("{:?}", self.vtable().lock().borrow().map)
     }
+
+    pub fn print_tid(&self) {
+        println!("{:?}", self.vtable().lock().borrow().tids.last().unwrap())
+    }
 }
