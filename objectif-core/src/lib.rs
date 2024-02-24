@@ -11,19 +11,26 @@ pub type OLazy<T, F = fn() -> T> = Lazy<T, F>;
 pub type MapType = BTreeMap<&'static str, fn(*mut Object)>;
 
 #[doc(hidden)]
+pub type Parents = Vec<std::any::TypeId>;
+
+#[doc(hidden)]
+#[derive(Debug, Clone)]
+pub struct VTable {
+    pub map: MapType,
+    pub tids: Parents,
+}
+
+#[doc(hidden)]
+pub type OVTable = Arc<ReentrantMutex<RefCell<VTable>>>;
+
+#[doc(hidden)]
 pub type RCellMapType = RefCell<MapType>;
 
 #[doc(hidden)]
 pub type VTableInner = ReentrantMutex<RCellMapType>;
 
 #[doc(hidden)]
-pub type VTable = Arc<VTableInner>;
-
-#[doc(hidden)]
 pub type LazyVTable = Lazy<VTableInner>;
-
-#[doc(hidden)]
-pub type Parents = Arc<ReentrantMutex<RefCell<Vec<std::any::TypeId>>>>;
 
 
 #[doc(hidden)]
@@ -40,7 +47,7 @@ macro_rules! _call_method {
     ($obj:expr, $name:tt) => {
         {
             let val = $obj.vtable();
-            let ret = match val.lock().borrow().get(stringify!($name)) {
+            let ret = match val.lock().borrow().map.get(stringify!($name)) {
                 Some(v) => {
                     Some(
                         (std::mem::transmute::<_, fn(*mut $crate::Object) -> _>(*v as fn(_)))(
@@ -57,7 +64,7 @@ macro_rules! _call_method {
         {
             let name = concat!($(stringify!($name), ':'),+);
             let val = $obj.vtable();
-            let ret = match val.lock().borrow().get(name) {
+            let ret = match val.lock().borrow().map.get(name) {
                 Some(v) => {
                     Some(
                         (std::mem::transmute::<_, fn(*mut $crate::Object, $($crate::_expr_as_underscore!($arg)),+) -> _>(*v as fn(_)))(
@@ -127,10 +134,10 @@ macro_rules! _super_init {
     ($obj:expr) => {
         {
             let o = $obj;
-            o.vtable().lock().borrow_mut().extend(Self::method_table().lock().borrow_mut().clone());
-            let parents = o.tids();
-            let mut parents = parents.lock();
-            parents.borrow_mut().push(std::any::TypeId::of::<Self>());
+            let o1 = o.vtable();
+            let mut o1 = o1.lock();
+            o1.borrow_mut().map.extend(Self::method_table().lock().borrow_mut().clone());
+            o1.borrow_mut().tids.push(std::any::TypeId::of::<Self>());
             o
         }
     };
@@ -179,7 +186,7 @@ macro_rules! _super_call {
 macro_rules! _is_child_of {
     ($e:expr, $i:ident) => {
         {
-            $e.tids().lock().borrow().contains(&std::any::TypeId::of::<$i>())
+            $e.vtable().lock().borrow().tids.contains(&std::any::TypeId::of::<$i>())
         }
     }
 }
@@ -189,15 +196,14 @@ macro_rules! _is_child_of {
 macro_rules! _is_instance_of {
     ($e:expr, $i:ident) => {
         {
-            *$e.tids().lock().borrow().last().unwrap() == std::any::TypeId::of::<$i>()
+            *$e.vtable().lock().borrow().tids.last().unwrap() == std::any::TypeId::of::<$i>()
         }
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct Object {
-    vtable: crate::VTable,
-    tids: Parents,
+    vtable: crate::OVTable,
 }
 
 #[doc(hidden)]
@@ -213,16 +219,15 @@ impl Default for Object {
     fn default() -> Self {
         Lazy::force(&Object_METHOD_TABLE);
         let m = Lazy::get(&Object_METHOD_TABLE).unwrap();
-        let vtable = VTable::new(VTableInner::new(RefCell::new(
-            m.lock().clone().into_inner(),
-        )));
-        let tids = Arc::new(ReentrantMutex::new(RefCell::new(vec![std::any::TypeId::of::<Self>()])));
-        Self { vtable, tids }
+        let map = 
+            m.lock().clone().into_inner();
+        let tids = vec![std::any::TypeId::of::<Self>()];
+        Self { vtable: Arc::new(ReentrantMutex::new(RefCell::new(VTable{ map, tids }))) }
     }
 }
 
 impl Object {
-    pub fn vtable(&self) -> VTable {
+    pub fn vtable(&self) -> OVTable {
         return self.vtable.clone();
     }
 
@@ -237,7 +242,7 @@ impl Object {
     }
 
     pub fn get_method(&self, name: &'static str) -> Option<fn(*mut Object)> {
-        if let Some(f) = self.vtable().lock().borrow().get(name) {
+        if let Some(f) = self.vtable().lock().borrow().map.get(name) {
             Some(*f)
         } else {
             None
@@ -249,16 +254,16 @@ impl Object {
         name: &'static str,
         f: *const (),
     ) -> Option<fn(*mut Object)> {
-        self.vtable().lock().borrow_mut().insert(name, std::mem::transmute(f))
+        self.vtable().lock().borrow_mut().map.insert(name, std::mem::transmute(f))
     }
 
     pub unsafe fn try_add_method(&mut self, name: &'static str, f: *const ()) -> Result<(), &str> {
         let t = self.vtable();
         let t = t.lock();
-        if t.borrow().contains_key(name) {
+        if t.borrow().map.contains_key(name) {
             Err("Key exists")
         } else {
-            t.borrow_mut().insert(name, std::mem::transmute(f));
+            t.borrow_mut().map.insert(name, std::mem::transmute(f));
             Ok(())
         }
     }
@@ -275,7 +280,7 @@ impl Object {
     }
 
     pub fn has_method(&self, nm: &str) -> bool {
-        self.vtable().lock().borrow().contains_key(nm)
+        self.vtable().lock().borrow().map.contains_key(nm)
     }
 
     pub fn is_object(&self) -> bool {
@@ -283,10 +288,6 @@ impl Object {
     }
 
     pub fn print_methods(&self) {
-        println!("{:?}", *self.vtable().lock().borrow())
-    }
-
-    pub fn tids(&self) -> Parents {
-        self.tids.clone()
+        println!("{:?}", self.vtable().lock().borrow().map)
     }
 }
