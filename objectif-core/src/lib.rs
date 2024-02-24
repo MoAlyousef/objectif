@@ -14,6 +14,8 @@ pub type VTable = Arc<VTableInner>;
 
 pub type LazyVTable = Lazy<VTableInner>;
 
+pub type Parents = Arc<ReentrantMutex<RefCell<Vec<std::any::TypeId>>>>;
+
 
 #[doc(hidden)]
 #[macro_export]
@@ -117,6 +119,9 @@ macro_rules! _super_init {
         {
             let o = $obj;
             o.vtable().lock().borrow_mut().extend(Self::method_table().lock().borrow_mut().clone());
+            let parents = o.tids();
+            let mut parents = parents.lock();
+            parents.borrow_mut().push(std::any::TypeId::of::<Self>());
             o
         }
     };
@@ -160,9 +165,30 @@ macro_rules! _super_call {
     };
 }
 
+#[doc(hidden)]
+#[macro_export]
+macro_rules! _is_child_of {
+    ($e:expr, $i:ident) => {
+        {
+            $e.tids().lock().borrow().contains(&std::any::TypeId::of::<$i>())
+        }
+    }
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! _is_instance_of {
+    ($e:expr, $i:ident) => {
+        {
+            *$e.tids().lock().borrow().last().unwrap() == std::any::TypeId::of::<$i>()
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Object {
     vtable: crate::VTable,
+    pub tids: Parents,
 }
 
 #[allow(non_upper_case_globals)]
@@ -180,7 +206,8 @@ impl Default for Object {
         let vtable = VTable::new(VTableInner::new(RefCell::new(
             m.lock().clone().into_inner(),
         )));
-        Self { vtable }
+        let tids = Arc::new(ReentrantMutex::new(RefCell::new(vec![std::any::TypeId::of::<Self>()])));
+        Self { vtable, tids }
     }
 }
 
@@ -247,5 +274,9 @@ impl Object {
 
     pub fn print_methods(&self) {
         println!("{:?}", *self.vtable().lock().borrow())
+    }
+
+    pub fn tids(&self) -> Parents {
+        self.tids.clone()
     }
 }

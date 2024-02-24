@@ -59,3 +59,15 @@ pub fn super_call(input: TokenStream) -> TokenStream {
     let fmt = format!("objectif::_super_call!({input})");
     fmt.parse().unwrap()
 }
+
+#[proc_macro]
+pub fn is_instance_of(input: TokenStream) -> TokenStream {
+    let fmt = format!("objectif::_is_instance_of!({input})");
+    fmt.parse().unwrap()
+}
+
+#[proc_macro]
+pub fn is_child_of(input: TokenStream) -> TokenStream {
+    let fmt = format!("objectif::_is_child_of!({input})");
+    fmt.parse().unwrap()
+}
