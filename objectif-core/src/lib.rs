@@ -188,7 +188,7 @@ macro_rules! _is_instance_of {
 #[derive(Debug, Clone)]
 pub struct Object {
     vtable: crate::VTable,
-    pub tids: Parents,
+    tids: Parents,
 }
 
 #[allow(non_upper_case_globals)]
