@@ -4,18 +4,25 @@ use std::cell::RefCell;
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
+#[doc(hidden)]
 pub type OLazy<T, F = fn() -> T> = Lazy<T, F>;
 
+#[doc(hidden)]
 pub type MapType = BTreeMap<&'static str, fn(*mut Object)>;
 
+#[doc(hidden)]
 pub type RCellMapType = RefCell<MapType>;
 
+#[doc(hidden)]
 pub type VTableInner = ReentrantMutex<RCellMapType>;
 
+#[doc(hidden)]
 pub type VTable = Arc<VTableInner>;
 
+#[doc(hidden)]
 pub type LazyVTable = Lazy<VTableInner>;
 
+#[doc(hidden)]
 pub type Parents = Arc<ReentrantMutex<RefCell<Vec<std::any::TypeId>>>>;
 
 
@@ -193,6 +200,7 @@ pub struct Object {
     tids: Parents,
 }
 
+#[doc(hidden)]
 #[allow(non_upper_case_globals)]
 pub static Object_METHOD_TABLE: LazyVTable = LazyVTable::new(|| unsafe {
     let mut map = BTreeMap::new();

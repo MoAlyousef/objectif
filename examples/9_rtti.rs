@@ -1,4 +1,4 @@
-use objectif::{inherits, super_init, table_init, is_instance_of, is_child_of, Object};
+use objectif::{inherits, is_child_of, is_instance_of, super_init, table_init, Object};
 
 #[derive(Clone)]
 #[inherits(Object)]

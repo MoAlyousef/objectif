@@ -30,6 +30,7 @@ pub fn inherits(attr: TokenStream, input: TokenStream) -> TokenStream {
     let fmt = format!(
         "{input}\n
         objectif::_define_class![{class_name}:{attr}];\n
+        #[doc(hidden)]
         #[allow(non_upper_case_globals)]\n
         static {class_name}_METHOD_TABLE: objectif::LazyVTable = objectif::LazyVTable::new(|| objectif::VTableInner::new(objectif::RCellMapType::new(objectif::OLazy::get(&{attr}::method_table()).expect(\"oops\").lock().clone().into_inner())));\n
         impl {class_name} {{
