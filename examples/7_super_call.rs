@@ -7,7 +7,7 @@ struct Shape {
 
 impl Shape {
     pub fn draw(&self) {
-        println!("Draw shape");
+        println!("Draw Shape");
     }
 }
 
@@ -73,10 +73,39 @@ impl Circle {
     }
 }
 
+#[inherits(Shape)]
+struct Triangle {
+    parent: Shape,
+    b: f64,
+    h: f64,
+}
+
+impl Triangle {
+    fn new(b: f64, h: f64) -> Self {
+        table_init! {
+            Triangle,
+            "draw": draw,
+        };
+        Self {
+            parent: super_init![Shape::default()],
+            b,
+            h,
+        }
+    }
+    pub fn draw(&self) {
+        // or a dynamic call
+        let _: () = unsafe { super_call![Shape, self, draw].unwrap() };
+        println!("Draw Triangle");
+    }
+}
+
 fn main() {
     let myrect = Rect::new(4., 5.);
     let _: () = unsafe { call_method![myrect, draw].unwrap() };
 
     let mycircle = Circle::new(4.);
     let _: () = unsafe { call_method![mycircle, draw].unwrap() };
+
+    let mytriangle = Triangle::new(4., 2.);
+    let _: () = unsafe { call_method![mytriangle, draw].unwrap() };
 }

@@ -193,6 +193,39 @@ macro_rules! _super_call {
             ret
         }
     };
+    ($cls:ty, $obj:expr, $name:tt) => {
+        {
+            let val = $crate::OLazy::get(&<$cls>::method_table()).unwrap();
+            let ret = match val.lock().borrow().get(stringify!($name)) {
+                Some(v) => {
+                    Some(
+                        (std::mem::transmute::<_, fn(*mut $crate::Object) -> _>(*v as fn(_)))(
+                            $obj as *const _ as *mut $crate::Object,
+                        )
+                    )
+                },
+                None => None,
+            };
+            ret
+        }
+    };
+    ($cls:ty, $obj:expr, $($name:ident : $arg:expr)+) => {
+        {
+            let name = concat!($(stringify!($name), ':'),+);
+            let val = $crate::OLazy::get(<$cls>::method_table()).unwrap();
+            let ret = match val.lock().borrow().get(name) {
+                Some(v) => {
+                    Some(
+                        (std::mem::transmute::<_, fn(*mut $crate::Object, $($crate::_expr_as_underscore!($arg)),+) -> _>(*v as fn(_)))(
+                            $obj as *const _ as *mut $crate::Object, $($arg,)+
+                        )
+                    )
+                },
+                None => None,
+            };
+            ret
+        }
+    };
 }
 
 #[doc(hidden)]
