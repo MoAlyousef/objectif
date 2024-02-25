@@ -186,7 +186,7 @@ macro_rules! _super_call {
 macro_rules! _is_child_of {
     ($e:expr, $i:ident) => {
         {
-            $e.vtable().lock().borrow().tids.contains(&std::any::TypeId::of::<$i>())
+            $e.is_child_of::<$i>()
         }
     }
 }
@@ -196,7 +196,7 @@ macro_rules! _is_child_of {
 macro_rules! _is_instance_of {
     ($e:expr, $i:ident) => {
         {
-            *$e.vtable().lock().borrow().tids.last().unwrap() == std::any::TypeId::of::<$i>()
+            $e.is_instance_of::<$i>()
         }
     }
 }
@@ -226,6 +226,7 @@ impl Default for Object {
     }
 }
 
+#[doc(hidden)]
 impl Object {
     pub fn vtable(&self) -> OVTable {
         return self.vtable.clone();
@@ -293,5 +294,13 @@ impl Object {
 
     pub fn print_tid(&self) {
         println!("{:?}", self.vtable().lock().borrow().tids.last().unwrap())
+    }
+
+    pub fn is_instance_of<T: 'static>(&self) -> bool {
+        self.vtable.lock().borrow().tids.last().unwrap() == &std::any::TypeId::of::<T>()
+    }
+
+    pub fn is_child_of<T: 'static>(&self) -> bool {
+        self.vtable.lock().borrow().tids.contains(&std::any::TypeId::of::<T>())
     }
 }
