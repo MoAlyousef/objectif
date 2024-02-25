@@ -16,6 +16,13 @@ pub fn add_class_method(input: TokenStream) -> TokenStream {
 }
 
 #[proc_macro]
+pub fn try_add_class_method(input: TokenStream) -> TokenStream {
+    format!("objectif::_try_add_class_method![{input}]")
+        .parse()
+        .unwrap()
+}
+
+#[proc_macro]
 pub fn super_init(input: TokenStream) -> TokenStream {
     format!("objectif::_super_init![{}]", input)
         .parse()

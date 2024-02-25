@@ -82,8 +82,8 @@ macro_rules! _call_method {
 #[doc(hidden)]
 #[macro_export]
 macro_rules! _add_class_method {
-    ($i:ident, $sel:literal, $f:expr) => {
-        $i::method_table()
+    ($i:ty, $sel:literal, $f:expr) => {
+        <$i>::method_table()
             .lock()
             .borrow_mut()
             .insert($sel, std::mem::transmute($f as *const ()))
@@ -92,8 +92,22 @@ macro_rules! _add_class_method {
 
 #[doc(hidden)]
 #[macro_export]
+macro_rules! _try_add_class_method {
+    ($i:ty, $sel:literal, $f:expr) => {
+        let t = <$i>::method_table().lock();
+        if t.borrow().contains_key($sel) {
+            Err("Key exists")
+        } else {
+            t.borrow_mut().insert($sel, std::mem::transmute($f as *const ()));
+            Ok(())
+        }
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
 macro_rules! _define_class {
-    ($name:ident:$parent:ident) => {
+    ($name:ident:$parent:ty) => {
         impl std::ops::Deref for $name {
             type Target = $parent;
             fn deref(&self) -> &Self::Target {
@@ -113,17 +127,17 @@ macro_rules! _define_class {
 #[doc(hidden)]
 #[macro_export]
 macro_rules! _table_init {
-    ($obj:ident) => {
+    ($obj:ty) => {
         {
             let mut map = $crate::MapType::default();
-            $obj::method_table().lock().borrow_mut().extend(map)
+            <$obj>::method_table().lock().borrow_mut().extend(map)
         }
     };
-    ($obj:ident, $($arg:literal : $name:ident,)*) => {
+    ($obj:ty, $($arg:literal : $name:ident,)*) => {
         {
             let mut map = $crate::MapType::default();
-            $(map.insert($arg, unsafe { std::mem::transmute($obj::$name as *const ()) });)*
-            $obj::method_table().lock().borrow_mut().extend(map)
+            $(map.insert($arg, unsafe { std::mem::transmute(<$obj>::$name as *const ()) });)*
+            <$obj>::method_table().lock().borrow_mut().extend(map)
         }
     };
 }
@@ -184,7 +198,7 @@ macro_rules! _super_call {
 #[doc(hidden)]
 #[macro_export]
 macro_rules! _is_child_of {
-    ($e:expr, $i:ident) => {
+    ($e:expr, $i:ty) => {
         {
             $e.is_child_of::<$i>()
         }
@@ -194,7 +208,7 @@ macro_rules! _is_child_of {
 #[doc(hidden)]
 #[macro_export]
 macro_rules! _is_instance_of {
-    ($e:expr, $i:ident) => {
+    ($e:expr, $i:ty) => {
         {
             $e.is_instance_of::<$i>()
         }
@@ -226,22 +240,7 @@ impl Default for Object {
     }
 }
 
-#[doc(hidden)]
 impl Object {
-    pub fn vtable(&self) -> OVTable {
-        return self.vtable.clone();
-    }
-
-    pub fn method_table() -> &'static LazyVTable {
-        Lazy::force(&Object_METHOD_TABLE);
-        &Object_METHOD_TABLE
-    }
-
-    pub fn method_table1(&self) -> &'static LazyVTable {
-        Lazy::force(&Object_METHOD_TABLE);
-        &Object_METHOD_TABLE
-    }
-
     pub fn get_method(&self, name: &'static str) -> Option<fn(*mut Object)> {
         if let Some(f) = self.vtable().lock().borrow().map.get(name) {
             Some(*f)
@@ -269,17 +268,6 @@ impl Object {
         }
     }
 
-    /// TODO these need to be macros
-    pub unsafe fn try_add_class_method(name: &'static str, f: *const ()) -> Result<(), &str> {
-        let t = Object_METHOD_TABLE.lock();
-        if t.borrow().contains_key(name) {
-            Err("Key exists")
-        } else {
-            t.borrow_mut().insert(name, std::mem::transmute(f));
-            Ok(())
-        }
-    }
-
     pub fn has_method(&self, nm: &str) -> bool {
         self.vtable().lock().borrow().map.contains_key(nm)
     }
@@ -302,5 +290,33 @@ impl Object {
 
     pub fn is_child_of<T: 'static>(&self) -> bool {
         self.vtable.lock().borrow().tids.contains(&std::any::TypeId::of::<T>())
+    }
+}
+
+#[doc(hidden)]
+impl Object {
+    pub fn vtable(&self) -> OVTable {
+        return self.vtable.clone();
+    }
+
+    pub fn method_table() -> &'static LazyVTable {
+        Lazy::force(&Object_METHOD_TABLE);
+        &Object_METHOD_TABLE
+    }
+
+    pub fn method_table1(&self) -> &'static LazyVTable {
+        Lazy::force(&Object_METHOD_TABLE);
+        &Object_METHOD_TABLE
+    }
+
+    /// TODO these need to be macros
+    pub unsafe fn try_add_class_method(name: &'static str, f: *const ()) -> Result<(), &str> {
+        let t = Object_METHOD_TABLE.lock();
+        if t.borrow().contains_key(name) {
+            Err("Key exists")
+        } else {
+            t.borrow_mut().insert(name, std::mem::transmute(f));
+            Ok(())
+        }
     }
 }
