@@ -33,7 +33,10 @@ pub fn super_init(input: TokenStream) -> TokenStream {
 pub fn inherits(attr: TokenStream, input: TokenStream) -> TokenStream {
     let input1 = input.to_string();
     let input1: Vec<_> = input1.split(' ').collect();
-    let class_name = input1[1];
+    let mut class_name = input1[1];
+    if class_name == "struct" {
+        class_name = input1[2];
+    }
     let fmt = format!(
         "{input}\n
         objectif::_define_class![{class_name}:{attr}];\n
