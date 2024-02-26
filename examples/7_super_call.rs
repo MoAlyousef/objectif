@@ -93,7 +93,7 @@ impl Triangle {
         }
     }
     pub fn draw(&self) {
-        // or a dynamic call
+        // or a dynamic call using any parent in the hierarchy
         let _: () = unsafe { super_call![Shape, self, draw].unwrap() };
         println!("Draw Triangle");
     }
