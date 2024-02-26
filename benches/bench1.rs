@@ -140,6 +140,13 @@ fn benchmark(count: u32) {
 }
 
 fn main() {
-    let args: Vec<_> = std::env::args().collect();
-    std::hint::black_box(benchmark(args[1].parse().unwrap_or(100000)));
+    let count = {
+        let args: Vec<_> = std::env::args().collect();
+        if args.len() == 1 {
+            100000
+        } else {
+            args[1].parse().unwrap_or(100000)
+        }
+    };
+    std::hint::black_box(benchmark(count));
 }
