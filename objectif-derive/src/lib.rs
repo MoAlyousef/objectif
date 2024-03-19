@@ -38,11 +38,12 @@ pub fn inherits(attr: TokenStream, input: TokenStream) -> TokenStream {
         class_name = input1[2];
     }
     let fmt = format!(
-        "{input}\n
-        objectif::_define_class![{class_name}:{attr}];\n
+        "#[repr(C)]
+        {input}
+        objectif::_define_class![{class_name}:{attr}];
         #[doc(hidden)]
-        #[allow(non_upper_case_globals)]\n
-        static {class_name}_METHOD_TABLE: objectif::LazyVTable = objectif::LazyVTable::new(|| objectif::VTableInner::new(objectif::RCellMapType::new(objectif::OLazy::get(&{attr}::method_table()).expect(\"oops\").lock().clone().into_inner())));\n
+        #[allow(non_upper_case_globals)]
+        static {class_name}_METHOD_TABLE: objectif::LazyVTable = objectif::LazyVTable::new(|| objectif::VTableInner::new(objectif::RCellMapType::new(objectif::OLazy::get(&{attr}::method_table()).expect(\"oops\").lock().clone().into_inner())));
         impl {class_name} {{
             pub fn method_table() -> &'static objectif::LazyVTable {{
                 objectif::OLazy::force(&{class_name}_METHOD_TABLE);
